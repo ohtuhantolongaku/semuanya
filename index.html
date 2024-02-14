@@ -73,9 +73,8 @@
 
       if (schedule !== "") {
         yaml += `  schedule:\n    - cron: "${schedule}"\n`;
-      } else {
-        yaml += `  workflow_dispatch:\n`;
       }
+      yaml += `  workflow_dispatch:\n`;
 
       yaml += `\njobs:\n  sync:\n    runs-on: ubuntu-latest\n\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v2\n\n      - name: Install rclone\n        run: |\n          curl https://rclone.org/install.sh | sudo bash\n\n`;
 
