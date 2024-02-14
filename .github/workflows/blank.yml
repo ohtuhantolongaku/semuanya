@@ -1,0 +1,13 @@
+name: Rclone
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Hello World Job
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Say Hello
+      run: echo "Hello, World!"
