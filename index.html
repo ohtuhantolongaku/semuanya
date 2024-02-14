@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Actions Workflow Generator</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="mb-4">Rclone Job Workflow Generator</h1>
+    <form id="workflowForm">
+      <div class="form-group">
+        <label for="source">Source Remote:</label>
+        <input type="text" class="form-control" id="source" name="source" placeholder="remote1:some folder" required>
+      </div>
+      <div class="form-group">
+        <label for="destination">Destination Remote:</label>
+        <input type="text" class="form-control" id="destination" name="destination" placeholder="remote2:some folder" required>
+      </div>
+      <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="activateSchedule" onchange="toggleSchedule()">
+        <label class="form-check-label" for="activateSchedule">Activate Schedule</label>
+      </div>
+      <div class="form-group">
+        <label for="schedule">Schedule (cron format):</label>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" id="schedule" name="schedule" placeholder="0 */12 * * *" disabled>
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" onclick="setSchedule('0 */12 * * *')" disabled>12 hours (default)</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="setSchedule('0 0 * * *')" disabled>24 hours</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="setSchedule('0 0 */2 * *')" disabled>2 days</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="setSchedule('0 0 */5 * *')" disabled>5 days</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="setSchedule('0 0 * * 0')" disabled>A week</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="setSchedule('0 0 1 * *')" disabled>A month</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="action">Action:</label>
+        <select class="form-control" id="action" name="action">
+          <option value="copy">Copy</option>
+          <option value="sync">Sync</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="verbosity">Verbosity:</label>
+        <select class="form-control" id="verbosity" name="verbosity">
+          <option value="">Default</option>
+          <option value="--quiet">Quiet</option>
+          <option value="--progress">Show progress</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="generateYAML()">Generate YAML</button>
+    </form>
+    <div class="mt-4">
+      <h3>Generated YAML:</h3>
+      <pre id="output"></pre>
+    </div>
+  </div>
+  <!-- Bootstrap JS (optional, for certain Bootstrap features) -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    function generateYAML() {
+      var source = document.getElementById("source").value;
+      var destination = document.getElementById("destination").value;
+      var schedule = document.getElementById("schedule").value;
+      var action = document.getElementById("action").value;
+      var verbosity = document.getElementById("verbosity").value;
+
+      var yaml = `name: Rclone\n\non:\n`;
+
+      if (schedule !== "") {
+        yaml += `  schedule:\n    - cron: "${schedule}"\n`;
+      } else {
+        yaml += `  workflow_dispatch:\n`;
+      }
+
+      yaml += `\njobs:\n  sync:\n    runs-on: ubuntu-latest\n\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v2\n\n      - name: Install rclone\n        run: |\n          curl https://rclone.org/install.sh | sudo bash\n\n`;
+
+      if (verbosity !== "") {
+        yaml += `      - name: Configure Rclone\n        run: |\n          echo "$RCLONE_CONFIG" > rclone.conf\n\n      - name: ${action} from ${source} to ${destination}\n        run: |\n          rclone ${action} "${source}" "${destination}"\n            --config rclone.conf ${verbosity}\n`;
+      } else {
+        yaml += `      - name: Configure Rclone\n        run: |\n          echo "$RCLONE_CONFIG" > rclone.conf\n\n      - name: ${action} from ${source} to ${destination}\n        run: |\n          rclone ${action} "${source}" "${destination}"\n            --config rclone.conf\n`;
+      }
+
+      document.getElementById("output").innerText = yaml;
+    }
+
+    function toggleSchedule() {
+      var scheduleInput = document.getElementById("schedule");
+      var activateScheduleCheckbox = document.getElementById("activateSchedule");
+      var cronButtons = document.querySelectorAll("#workflowForm button[type='button']");
+
+      scheduleInput.disabled = !activateScheduleCheckbox.checked;
+      scheduleInput.value = ""; // Clear the cron input field
+
+      cronButtons.forEach(function(button) {
+        button.disabled = !activateScheduleCheckbox.checked;
+      });
+    }
+
+    function setSchedule(cron) {
+      document.getElementById("schedule").value = cron;
+    }
+  </script>
+</body>
+</html>
