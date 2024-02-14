@@ -5,9 +5,25 @@ on:
 
 jobs:
   build:
-    name: Hello World Job
+    name: Elapsed Time Job
     runs-on: ubuntu-latest
 
     steps:
-    - name: Say Hello
-      run: echo "Hello, World!"
+    - name: Setup environment
+      run: |
+        sudo apt-get install dateutils
+
+    - name: Print Elapsed Time
+      run: |
+        start_time=$(date +%s)
+        while true; do
+          current_time=$(date +%s)
+          elapsed_seconds=$((current_time - start_time))
+          elapsed_days=$((elapsed_seconds / 86400))
+          elapsed_hours=$((elapsed_seconds / 3600 % 24))
+          elapsed_minutes=$((elapsed_seconds / 60 % 60))
+          elapsed_seconds=$((elapsed_seconds % 60))
+          echo "Elapsed Time: $elapsed_days days $elapsed_hours hours $elapsed_minutes minutes $elapsed_seconds seconds"
+          sleep 1
+          echo -e "\033[1A\033[K"  # Move cursor up one line and clear the line
+        done
